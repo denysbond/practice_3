@@ -1,5 +1,5 @@
 function renderCartItem(item) {
-    return `
+  return `
     <li data-item-id="${item.id}" data-item-qty="1" data-item-price="${item.price}" data-item-total="${item.price}">
         <h5 class="item-name">${item.name}</h5>
         <div class="item-info-wrapper">
@@ -12,134 +12,176 @@ function renderCartItem(item) {
 }
 
 export default class ShoppingCart {
-    constructor(rootEl) {
-        this.cartEl = rootEl.querySelector(".shopping-cart-list");
-        this.totalEl = rootEl.querySelector(".total");
-        this.emptyCartEl = rootEl.querySelector(".empty-cart-message");
-        this.removeAllEl = rootEl.querySelector(".remove-all");
+  constructor(rootEl) {
+    this.cartEl = rootEl.querySelector(".shopping-cart-list");
+    this.totalEl = rootEl.querySelector(".total");
+    this.emptyCartEl = rootEl.querySelector(".empty-cart-message");
+    this.removeAllEl = rootEl.querySelector(".remove-all");
 
-        this.addEventListeners();
+    this.addEventListeners();
+  }
+
+  /**
+   * Adds initial event listeners
+   * @returns {undefined}
+   */
+  addEventListeners() {
+    this.removeAllEl.addEventListener("click", () => {
+      this.removeAll();
+    });
+    this.cartEl.addEventListener("click", (e) => {
+      if (e.target.tagName === "BUTTON") {
+        this.removeItem(e.target.closest("li").dataset.itemId);
+      }
+    });
+  }
+
+  /**
+   * Adds new item to the cart
+   * or increments its quantity if item is already present.
+   * @param {Object} item - item description object
+   * @returns {undefined}
+   */
+  addItem(item) {
+    if (!this.isItemInCart(item.id)) {
+      this.addNewItem(item);
+    } else {
+      this.incrementItem(item);
     }
 
-    /**
-     * Adds initial event listeners
-     * @returns {undefined}
-     */
-    addEventListeners() {
-        // Change me!
+    this.updateCartState();
+  }
+
+  /**
+   * Renders new item in the cart
+   * @param {Object} item - item description object
+   * @returns {undefined}
+   */
+  addNewItem(item) {
+    this.cartEl.innerHTML += renderCartItem(item);
+  }
+
+  /**
+   * Increments quantity and total price for existing cart item
+   * @param {Object} item - item description object
+   * @returns {undefined}
+   */
+  incrementItem(item) {
+    const itemLi = this.cartEl.querySelector(`[data-item-id="${item.id}"]`);
+    const qtyWrapper = itemLi.querySelector("span.item-qty");
+    const priceWrapper = itemLi.querySelector("span.item-price");
+
+    const currentQty = parseInt(itemLi.dataset.itemQty, 10);
+
+    itemLi.dataset.itemTotal =
+      parseInt(itemLi.dataset.itemTotal, 10) + item.price;
+    itemLi.dataset.itemQty = `${currentQty + 1}`;
+
+    qtyWrapper.innerHTML = itemLi.dataset.itemQty;
+    priceWrapper.innerHTML = itemLi.dataset.itemTotal;
+  }
+
+  /**
+   * Checks existence of item in shopping cart by its id
+   * @param {string} id - ID of an item
+   * @returns {boolean} - true if item is present in shopping cart, false otherwise
+   */
+  isItemInCart(id) {
+    const items = this.cartEl.children;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].dataset.itemId === id) {
+        return true;
+      }
     }
 
-    /**
-     * Adds new item to the cart
-     * or increments its quantity if item is already present.
-     * @param {Object} item - item description object
-     * @returns {undefined}
-     */
-    addItem(item) {
-        if (!this.isItemInCart(item.id)) {
-            this.addNewItem(item);
-        } else {
-            this.incrementItem(item);
-        }
+    return false;
+  }
 
-        this.updateCartState();
+  /**
+   * Checks if shopping cart is empty
+   * @returns {boolean} true if there's no items in cart, false otherwise
+   */
+  isCartEmpty() {
+    if (!this.cartEl.children.length) {
+      return true;
     }
+    return false;
+  }
 
-    /**
-     * Renders new item in the cart
-     * @param {Object} item - item description object
-     * @returns {undefined}
-     */
-    addNewItem(item) {
-        this.cartEl.innerHTML += renderCartItem(item);
-    }
+  /**
+   * Removes all items from the cart
+   * @returns {undefined}
+   */
+  removeAll() {
+    this.cartEl.innerHTML = "";
+    this.updateCartState();
+  }
 
-    /**
-     * Increments quantity and total price for existing cart item
-     * @param {Object} item - item description object
-     * @returns {undefined}
-     */
-    incrementItem(item) {
-        // Change me!
-    }
+  /**
+   * Removes item from a list
+   * @param {string} id - ID of and item to remove
+   * @returns {undefined}
+   */
+  removeItem(id) {
+    const itemLi = this.cartEl.querySelector(`[data-item-id="${id}"]`);
+    this.cartEl.removeChild(itemLi);
+    this.updateCartState();
+  }
 
-    /**
-     * Checks existence of item in shopping cart by its id
-     * @param {string} id - ID of an item
-     * @returns {boolean} - true if item is present in shopping cart, false otherwise
-     */
-    isItemInCart(id) {
-        // Change me!
-    }
+  /**
+   * Updates total sum and visibility of "no items" message / "remove all" button
+   * @returns {undefined}
+   */
+  updateCartState() {
+    this.updateTotal();
+    this.updateNoItemsMessage();
+    this.updateRemoveAllButton();
+  }
 
-    /**
-     * Checks if shopping cart is empty
-     * @returns {boolean} true if there's no items in cart, false otherwise
-     */
-    isCartEmpty() {
-        // Change me!
-    }
+  /**
+   * Update total sum in cart
+   * @returns {undefined}
+   */
+  updateTotal() {
+    this.totalEl.innerHTML = this.getTotalSum();
+  }
 
-    /**
-     * Removes all items from the cart
-     * @returns {undefined}
-     */
-    removeAll() {
-        // Change me!
-    }
+  /**
+   * Get total sum of all items in list
+   * @returns {number} Total sum
+   */
+  getTotalSum() {
+    let total = 0;
+    let items = this.cartEl.children;
 
-    /**
-     * Removes item from a list
-     * @param {string} id - ID of and item to remove
-     * @returns {undefined}
-     */
-    removeItem(id) {
-        // Change me!
+    for (let i = 0; i < items.length; i++) {
+      total += parseInt(items[i].dataset.itemTotal);
     }
+    return total;
+  }
 
-    /**
-     * Updates total sum and visibility of "no items" message / "remove all" button
-     * @returns {undefined}
-     */
-    updateCartState() {
-        this.updateTotal();
-        this.updateNoItemsMessage();
-        this.updateRemoveAllButton();
+  /**
+   * Updates visibility of cart "no items" message depending on state of the cart
+   * @returns {undefined}
+   */
+  updateNoItemsMessage() {
+    if (this.isCartEmpty()) {
+      return this.emptyCartEl.classList.remove("d-none");
+    } else {
+      return this.emptyCartEl.classList.add("d-none");
     }
+  }
 
-    /**
-     * Update total sum in cart
-     * @returns {undefined}
-     */
-    updateTotal() {
-        // Change me!
+  /**
+   * Updates visibility of cart /"remove all" button depending on state of the cart
+   * @returns {undefined}
+   */
+  updateRemoveAllButton() {
+    if (!this.isCartEmpty()) {
+      return this.removeAllEl.classList.remove("d-none");
+    } else {
+      return this.removeAllEl.classList.add("d-none");
     }
-
-    /**
-     * Get total sum of all items in list
-     * @returns {number} Total sum
-     */
-    getTotalSum() {
-        // Change me!
-    }
-
-    /**
-     * Updates visibility of cart "no items" message depending on state of the cart
-     * @returns {undefined}
-     */
-    updateNoItemsMessage() {
-        if (this.isCartEmpty()) {
-            // Change me!
-        } else {
-            // Change me!
-        }
-    }
-
-    /**
-     * Updates visibility of cart /"remove all" button depending on state of the cart
-     * @returns {undefined}
-     */
-    updateRemoveAllButton() {
-        // Change me!
-    }
+  }
 }
